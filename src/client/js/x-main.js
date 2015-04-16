@@ -16,9 +16,51 @@
 		// 'personal-page',
 		// 'psui-notification'
 	])
+	.config(function($sceDelegateProvider) {
+		$sceDelegateProvider.resourceUrlWhitelist([
+		'self','https://peto.test.unionsoft.sk/**'
+		]);
+	})
+
+	.config(function( $sceProvider) {
+		$sceProvider.enabled(false);
+	})
+
 	.config(['$httpProvider', function ($httpProvider) {
-		$httpProvider.interceptors.push(function ($q,$injector,$rootScope) {
+
+		$httpProvider.defaults.useXDomain = true;
+		$httpProvider.defaults.withCredentials = true;
+		delete $httpProvider.defaults.headers.common['X-Requested-With'];
+
+		function concatRequestUri (url, suffix) {
+			console.log(url, suffix);
+
+			var _url = url || '';
+
+			if (/\/$/.test(_url)){
+				_url= _url.subString(0,_url.length -1);
+			}
+
+
+			var _suffix = suffix ;
+			if (_suffix){
+				if (/^\//.test(_suffix)){
+					return _url + _suffix;
+
+				}else {
+					return _url +'/' + _suffix;
+				}
+			}
+			else return _url;
+		}
+
+		$httpProvider.interceptors.push(['$q','$injector','$rootScope',function ($q,$injector,$rootScope) {
 			return {
+				'request': function (config) {
+					config.url = concatRequestUri('https://10.99.99.174:3443',config.url);
+					// config.url = 'https://peto.test.unionsoft.sk/'+config.url;
+					return config || $q.when(config);
+				},
 				'response': function (response) {
 					//Will only be called for HTTP up to 300
 					return response;
@@ -43,7 +85,7 @@
 					return $q.reject(rejection);
 				}
 			};
-		});
+		}]);
 	}])
 	.config(['reCAPTCHAProvider',function (reCAPTCHAProvider) {
 				// required: please use your own key :)
@@ -57,13 +99,13 @@
 	.config(['$routeProvider', 'xpsui:loggingProvider',function($routeProvider, loggingProvider) {
 		// $routeProvider.when('/view/:schema/:objId', {controller: 'xViewController', templateUrl: '/partials/x-view.html'});
 
-		$routeProvider.when('/personal-page', {templateUrl: '/partials/x-personal-page.html', controller: 'xpsui:PersonalPageCtrl', permissions:['System User']});
-		$routeProvider.when('/statistics', {templateUrl: '/partials/x-registry-view.html', controller: 'xpsui:StatisticsViewCtrl', permissions:['Registry - read']});
-		$routeProvider.when('/massmailing', {templateUrl: '/partials/x-massmailing.html', controller: 'xpsui:MassmailingEditCtrl', permissions:['Registry - write']});
-		$routeProvider.when('/login', {templateUrl: '/partials/x-login.html', controller: 'xpsui:SecurityLoginCtrl'});
-		$routeProvider.when('/personal-change-password', {templateUrl: '/partials/x-personal-change-password.html', controller: 'xpsui:SecurityPersonalChangePasswordCtrl', permissions:['System User']});
+		$routeProvider.when('/personal-page', {templateUrl: 'partials/x-personal-page.html', controller: 'xpsui:PersonalPageCtrl', permissions:['System User']});
+		$routeProvider.when('/statistics', {templateUrl: 'partials/x-registry-view.html', controller: 'xpsui:StatisticsViewCtrl', permissions:['Registry - read']});
+		$routeProvider.when('/massmailing', {templateUrl: 'partials/x-massmailing.html', controller: 'xpsui:MassmailingEditCtrl', permissions:['Registry - write']});
+		$routeProvider.when('/login', {templateUrl: 'partials/x-login.html', controller: 'xpsui:SecurityLoginCtrl'});
+		$routeProvider.when('/personal-change-password', {templateUrl: 'partials/x-personal-change-password.html', controller: 'xpsui:SecurityPersonalChangePasswordCtrl', permissions:['System User']});
 		$routeProvider.when('/security/group/edit/', {
-			templateUrl: '/partials/x-security-group-edit.html',
+			templateUrl: 'partials/x-security-group-edit.html',
 			controller: 'xpsui:SecurityGroupEditCtrl',
 			permissions:['Security - read'],
 			resolve: {
@@ -77,23 +119,23 @@
 		$routeProvider.when('/security/user/edit', {templateUrl: 'partials/x-security-user-edit.html', controller: 'xpsui:SecurityUserEditCtrl',permissions:['Security - read']});
 		$routeProvider.when('/security/profile/edit', {templateUrl: 'partials/x-security-profile-edit.html', controller: 'xpsui:SecurityProfileEditCtrl',permissions:['Security - read']});
 
-		$routeProvider.when('/forgotten', {templateUrl: '/partials/forgotten.html', controller: 'xpsui:SecurityForgottenCtrl'});
-		$routeProvider.when('/forgotten/reset/:token', {templateUrl: '/partials/forgottenReset.html', controller: 'xpsui:SecurityForgottenResetCtrl'});
+		$routeProvider.when('/forgotten', {templateUrl: 'partials/forgotten.html', controller: 'xpsui:SecurityForgottenCtrl'});
+		$routeProvider.when('/forgotten/reset/:token', {templateUrl: 'partials/forgottenReset.html', controller: 'xpsui:SecurityForgottenResetCtrl'});
 
-		$routeProvider.when('/registry/new/:schema', {templateUrl: '/partials/x-registry-new.html', controller: 'xpsui:RegistryNewCtrl'});
-		$routeProvider.when('/registry/view/:schema/:id', {templateUrl: '/partials/x-registry-view.html', controller: 'xpsui:RegistryViewCtrl'});
+		$routeProvider.when('/registry/new/:schema', {templateUrl: 'partials/x-registry-new.html', controller: 'xpsui:RegistryNewCtrl'});
+		$routeProvider.when('/registry/view/:schema/:id', {templateUrl: 'partials/x-registry-view.html', controller: 'xpsui:RegistryViewCtrl'});
 		$routeProvider.when('/search/:entity', {templateUrl : 'partials/x-generic-search.html', controller : 'xpsui:SearchCtrl'});
 
 		$routeProvider.when('/registry/custom/:template/:schema/:id', {templateUrl: function(params) {
-			return '/dataset/get/partials/' + params.template;
+			return 'dataset/get/partials/' + params.template;
 		}, controller: 'xpsui:RegistryCustomTemplateCtrl',permissions:['Registry - read']});
 
 		$routeProvider.when('/registry/generated/:schemaFrom/:idFrom/:generateBy/:template', {templateUrl: function(params) {
-			return '/dataset/get/partials/' + params.template;
+			return 'dataset/get/partials/' + params.template;
 		}, controller: 'xpsui:RegistryCustomGenerateCtrl',permissions:['Registry - read']});
 
-		$routeProvider.when('/portal/edit/:id?', {templateUrl: '/partials/x-portal-edit.html', controller: 'xpsui:PortalEditorCtrl',permissions:['Portal - write']});
-		$routeProvider.when('/portal/menu', {templateUrl: '/partials/x-portal-menu.html', controller: 'xpsui:PortalEditorMenuCtrl',permissions:['Portal - write']});
+		$routeProvider.when('/portal/edit/:id?', {templateUrl: 'partials/x-portal-edit.html', controller: 'xpsui:PortalEditorCtrl',permissions:['Portal - write']});
+		$routeProvider.when('/portal/menu', {templateUrl: 'partials/x-portal-menu.html', controller: 'xpsui:PortalEditorMenuCtrl',permissions:['Portal - write']});
 
 		$routeProvider.when('/schema/edit', {
 			templateUrl: 'partials/x-schema-editor-index.html',
@@ -122,7 +164,7 @@
 			}
 		});
 
-		$routeProvider.otherwise({templateUrl: '/partials/x-login.html', controller: 'xpsui:SecurityLoginCtrl'});
+		$routeProvider.otherwise({templateUrl: 'partials/x-login.html', controller: 'xpsui:SecurityLoginCtrl'});
 
 		loggingProvider.setLevel(5);
 	}])

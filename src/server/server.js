@@ -49,6 +49,14 @@ app.use(require('./request-logger.js')
 );
 app.disable('view cache');
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+
+
 // Static data
 app.use(express.static(path.join(process.cwd(), 'build', 'client')));
 app.use('/portal/', express.static(path.join(process.cwd(), 'data', 'portal', 'client')));
@@ -200,6 +208,7 @@ mongoDriver.init(config.mongoDbURI, function(err) {
 				passphrase: 'changeit'
 		};
 
+		host="0.0.0.0";
 		// Create an HTTPS service identical to the HTTP service.
 		https.createServer(ssl, app)
 		.listen(port, host, function(){
