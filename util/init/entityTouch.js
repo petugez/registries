@@ -52,7 +52,7 @@ mongoDriver.init(config.mongoDbURI, function(err) {
 		eventSchedulerCalls.push(
 			function (callback){
 				var fireTime=new Date().getTime()+5000;
-				console.log('s');
+				// console.log('s');
 				eventScheduler.scheduleEvent(fireTime,eventType,eventData,null,callback);
 			}
 		)
@@ -66,26 +66,36 @@ mongoDriver.init(config.mongoDbURI, function(err) {
 
 function go(udc,schema,eventSchedulerCalls,callback) {
 
-	var req={params:{schema:schema},body:{limit:1000000}};
-	req.perm={'Registry - read':true};
+  	var valueCount=1;
+	var page=0;
+	var pageSize=100;
 
-	var res=function (){
-		this.send=function (code ,data){
-			console.log(code,data);
-		};
-		this.status=function (status){
-			console.log(status);
-			return this;
-		};
-		this.json=function(data){
-			iterateData(data,udc,eventSchedulerCalls,callback);
-		};
-	};
+	async.whilst(function(){return valueCount>0},function(cb){
+		var req={params:{schema:schema},body:{limit:pageSize,skip:page*pageSize}};
+		req.perm={'Registry - read':true};
 
-	req.perm={"Registry - read": true};
-	util.inherits(res, require('stream').Writable);
-	res= new res();
-	udc.searchBySchema(req,res);
+		var res=function (){
+			this.send=function (code ,data){
+				console.log(code,data);
+			};
+			this.status=function (status){
+				console.log(status);
+				return this;
+			};
+			this.json=function(data){
+				page++;
+				valueCount=data.length;
+				iterateData(data,udc,eventSchedulerCalls,cb);
+				console.log("--> Page processed ",page);
+			};
+		};
+
+		req.perm={"Registry - read": true};
+		util.inherits(res, require('stream').Writable);
+		res= new res();
+		valueCount=0;
+		udc.searchBySchema(req,res);
+	},callback);
 
 }
 
@@ -127,7 +137,7 @@ function saveItem(item,udc,callback){
 			};
 
 			this.json=function(data){
-				console.log('.');
+				// console.log('.');
 			  itemsSaved++;
 			 callback();
 			};
